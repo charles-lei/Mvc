@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Mvc.Rendering;
 using Microsoft.AspNet.Razor.Runtime.TagHelpers;
-using Microsoft.Framework.WebEncoders;
+using Microsoft.Framework.WebEncoders.Testing;
 using Xunit;
 
 namespace Microsoft.AspNet.Mvc.TagHelpers
@@ -135,7 +135,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             var expectedAttribute = new KeyValuePair<string, object>("type", "btn");
             tagHelperOutput.Attributes.Add(expectedAttribute);
 
-            var tagBuilder = new TagBuilder("p", new HtmlEncoder());
+            var tagBuilder = new TagBuilder("p", new NullTestEncoder());
             tagBuilder.Attributes.Add("type", "hello");
 
             // Act
@@ -155,7 +155,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
                 attributes: new Dictionary<string, object>());
             tagHelperOutput.Attributes.Add("class", "Hello");
 
-            var tagBuilder = new TagBuilder("p", new HtmlEncoder());
+            var tagBuilder = new TagBuilder("p", new NullTestEncoder());
             tagBuilder.Attributes.Add("class", "btn");
 
             var expectedAttribute = new KeyValuePair<string, object>("class", "Hello btn");
@@ -181,7 +181,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
                 attributes: new Dictionary<string, object>());
             tagHelperOutput.Attributes.Add(originalName, "Hello");
 
-            var tagBuilder = new TagBuilder("p", new HtmlEncoder());
+            var tagBuilder = new TagBuilder("p", new NullTestEncoder());
             tagBuilder.Attributes.Add(updateName, "btn");
 
             // Act
@@ -200,7 +200,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
                 "p",
                 attributes: new Dictionary<string, object>());
 
-            var tagBuilder = new TagBuilder("p", new HtmlEncoder());
+            var tagBuilder = new TagBuilder("p", new NullTestEncoder());
             var expectedAttribute = new KeyValuePair<string, object>("visible", "val < 3");
             tagBuilder.Attributes.Add("visible", "val < 3");
 
@@ -220,7 +220,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
                 "p",
                 attributes: new Dictionary<string, object>());
 
-            var tagBuilder = new TagBuilder("p", new HtmlEncoder());
+            var tagBuilder = new TagBuilder("p", new NullTestEncoder());
             var expectedAttribute1 = new KeyValuePair<string, object>("class", "btn");
             var expectedAttribute2 = new KeyValuePair<string, object>("class2", "btn");
             tagBuilder.Attributes.Add("class", "btn");
@@ -247,7 +247,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             var expectedAttribute = new KeyValuePair<string, object>("class", "btn");
             tagHelperOutput.Attributes.Add(expectedAttribute);
 
-            var tagBuilder = new TagBuilder("p", new HtmlEncoder());
+            var tagBuilder = new TagBuilder("p", new NullTestEncoder());
 
             // Act
             tagHelperOutput.MergeAttributes(tagBuilder);
@@ -267,7 +267,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             var expectedOutputAttribute = new KeyValuePair<string, object>("class", "btn");
             tagHelperOutput.Attributes.Add(expectedOutputAttribute);
 
-            var tagBuilder = new TagBuilder("p", new HtmlEncoder());
+            var tagBuilder = new TagBuilder("p", new NullTestEncoder());
             var expectedBuilderAttribute = new KeyValuePair<string, object>("for", "hello");
             tagBuilder.Attributes.Add("for", "hello");
 

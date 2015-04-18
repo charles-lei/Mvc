@@ -401,7 +401,14 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
                 getChildContentAsync: () =>
                 {
                     var tagHelperContent = new DefaultTagHelperContent();
-                    tagHelperContent.SetContent(originalContent);
+                    if (string.IsNullOrEmpty(originalContent))
+                    {
+                        tagHelperContent.SetContent(originalContent);
+                    }
+                    else
+                    {
+                        tagHelperContent.SetContent("HtmlEncode[[" + originalContent + "]]");
+                    }
                     return Task.FromResult<TagHelperContent>(tagHelperContent);
                 });
 
