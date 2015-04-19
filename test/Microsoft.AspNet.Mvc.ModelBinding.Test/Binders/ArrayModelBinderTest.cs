@@ -11,57 +11,98 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
     public class ArrayModelBinderTest
     {
         [Fact]
-        public async Task BindModel()
+        public async Task BindModelAsync_ValueProviderContainPrefix_Succeeds()
         {
             // Arrange
             var valueProvider = new SimpleHttpValueProvider
             {
                 { "someName[0]", "42" },
-                { "someName[1]", "84" }
+                { "someName[1]", "84" },
             };
             var bindingContext = GetBindingContext(valueProvider);
+            var modelState = bindingContext.ModelState;
             var binder = new ArrayModelBinder<int>();
 
             // Act
-            var retVal = await binder.BindModelAsync(bindingContext);
+            var result = await binder.BindModelAsync(bindingContext);
 
             // Assert
-            Assert.NotNull(retVal);
+            Assert.NotNull(result);
 
-            int[] array = retVal.Model as int[];
+            int[] array = result.Model as int[];
             Assert.Equal(new[] { 42, 84 }, array);
+            Assert.True(modelState.IsValid);
         }
 
         [Fact]
-        public async Task GetBinder_ValueProviderDoesNotContainPrefix_ReturnsNull()
+        public async Task BindModelAsync_ValueProviderDoesNotContainPrefix_ReturnsNull()
         {
             // Arrange
             var bindingContext = GetBindingContext(new SimpleHttpValueProvider());
             var binder = new ArrayModelBinder<int>();
 
             // Act
-            var bound = await binder.BindModelAsync(bindingContext);
+            var result = await binder.BindModelAsync(bindingContext);
 
             // Assert
-            Assert.Null(bound);
+            Assert.Null(result);
         }
 
         [Fact]
-        public async Task GetBinder_ModelMetadataReturnsReadOnly_ReturnsNull()
+        public async Task BindModelAsync_ModelMetadataReturnsReadOnly_ReturnsNull()
         {
             // Arrange
             var valueProvider = new SimpleHttpValueProvider
             {
-                { "foo[0]", "42" },
+                { "someName[0]", "42" },
+                { "someName[1]", "84" },
             };
             var bindingContext = GetBindingContext(valueProvider, isReadOnly: true);
             var binder = new ArrayModelBinder<int>();
 
             // Act
-            var bound = await binder.BindModelAsync(bindingContext);
+            var result = await binder.BindModelAsync(bindingContext);
 
             // Assert
-            Assert.Null(bound);
+            Assert.Null(result);
+        }
+
+        [Theory]
+        [InlineData(false, 0)]
+        [InlineData(false, 1)]
+        [InlineData(false, 2)]
+        [InlineData(true, 0)]
+        [InlineData(true, 1)]
+        [InlineData(true, 2)]
+        public async Task BindModelAsync_BindingContextModelNonNull_Succeeds(bool isReadOnly, int arrayLength)
+        {
+            // Arrange
+            var valueProvider = new SimpleHttpValueProvider
+            {
+                { "someName[0]", "42" },
+                { "someName[1]", "84" },
+            };
+            var expected = new[] { 42, 84 };
+
+            var bindingContext = GetBindingContext(valueProvider, isReadOnly);
+            var modelState = bindingContext.ModelState;
+            var array = new int[arrayLength];
+            bindingContext.Model = array;
+            var binder = new ArrayModelBinder<int>();
+
+            // Act
+            var result = await binder.BindModelAsync(bindingContext);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.IsModelSet);
+            Assert.Same(array, result.Model);
+
+            Assert.True(modelState.IsValid);
+            for (int i = 0; i < arrayLength; i++)
+            {
+                Assert.Equal(expected[i], array[i]);
+            }
         }
 
         private static IModelBinder CreateIntBinder()
