@@ -103,5 +103,18 @@ namespace Microsoft.AspNet.Mvc.Core.Rendering
             // Assert
             Assert.Equal(expectedOutput, value.ToString());
         }
+
+        [Fact]
+        public void SetInnerText_HtmlEncodesValue()
+        {
+            // Arrange
+            var tagBuilder = new TagBuilder("p", new CommonTestEncoder());
+
+            // Act
+            tagBuilder.SetInnerText("TestValue");
+
+            // Assert
+            Assert.Equal("HtmlEncode[[TestValue]]", tagBuilder.InnerHtml);
+        }
     }
 }
