@@ -5,7 +5,9 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Mvc.ModelBinding.Internal;
+using Microsoft.Framework.DependencyInjection;
 using Microsoft.Framework.Internal;
+using Microsoft.Framework.Logging;
 
 namespace Microsoft.AspNet.Mvc.ModelBinding
 {
@@ -26,15 +28,16 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
         /// <inheritdoc />
         protected override Task<ModelBindingResult> BindModelCoreAsync([NotNull] ModelBindingContext bindingContext)
         {
-            var request = bindingContext.OperationBindingContext.HttpContext.Request;
+            var httpContext = bindingContext.OperationBindingContext.HttpContext;
             var modelMetadata = bindingContext.ModelMetadata;
+            var logger = httpContext.RequestServices.GetRequiredService<ILogger<HeaderModelBinder>>();
 
             // Property name can be null if the model metadata represents a type (rather than a property or parameter).
             var headerName = bindingContext.BinderModelName ?? modelMetadata.PropertyName ?? bindingContext.ModelName;
             object model = null;
             if (bindingContext.ModelType == typeof(string))
             {
-                var value = request.Headers.Get(headerName);
+                var value = httpContext.Request.Headers.Get(headerName);
                 if (value != null)
                 {
                     model = value;
@@ -43,13 +46,25 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             else if (typeof(IEnumerable<string>).GetTypeInfo().IsAssignableFrom(
                 bindingContext.ModelType.GetTypeInfo()))
             {
-                var values = request.Headers.GetCommaSeparatedValues(headerName);
+                var values = httpContext.Request.Headers.GetCommaSeparatedValues(headerName);
                 if (values != null)
                 {
                     model = ModelBindingHelper.ConvertValuesToCollectionType(
                         bindingContext.ModelType,
                         values);
                 }
+            }
+            else
+            {
+                logger.LogVerbose(
+                    "Unable to bind data for model with name '{ModelName}' and type '{ModelType}'." +
+                    string.Format(
+                        "Expected a model of type '{0}' or '{1}'.",
+                        typeof(string).FullName,
+                        typeof(IEnumerable<string>).FullName)
+                    ,
+                    headerName,
+                    bindingContext.ModelType.FullName);
             }
 
             return Task.FromResult(new ModelBindingResult(model, bindingContext.ModelName, isModelSet: model != null));
