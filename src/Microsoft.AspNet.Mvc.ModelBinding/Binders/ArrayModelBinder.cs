@@ -29,39 +29,14 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
         /// <inheritdoc />
         protected override object GetModel(IEnumerable<TElement> newCollection)
         {
-            if (newCollection == null)
-            {
-                return null;
-            }
-
-            return newCollection.ToArray();
+            return newCollection?.ToArray();
         }
 
         /// <inheritdoc />
         protected override void CopyToModel([NotNull] object target, IEnumerable<TElement> sourceCollection)
         {
-            TElement[] targetArray = target as TElement[];
-            Debug.Assert(targetArray != null); // This binder is instantiated only for array model types.
-
-            if (sourceCollection != null && targetArray != null)
-            {
-                int maxIndex = targetArray.Length - 1;
-                int index = 0;
-                foreach (var element in sourceCollection)
-                {
-                    if (index > maxIndex)
-                    {
-                        break;
-                    }
-
-                    targetArray[index++] = element;
-                }
-            }
-            else
-            {
-                // Do not expect base implementation will succeed but just in case...
-                base.CopyToModel(target, sourceCollection);
-            }
+            // Do not attempt to copy values into an array because an array's length is immutable. This choice is also
+            // consistent with MutableObjectModelBinder's handling of a read-only array property.
         }
     }
 }

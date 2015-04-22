@@ -166,13 +166,13 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
         }
 
         /// <summary>
-        /// Gets an <see cref="object"/> suitable for the associated property.
+        /// Gets an <see cref="object"/> assignable to the collection property.
         /// </summary>
         /// <param name="newCollection">
         /// Collection of values retrieved from value providers. Or <c>null</c> if nothing was bound.
         /// </param>
         /// <returns>
-        /// <see cref="object"/> suitable for the associated property. Or <c>null</c> if nothing was bound.
+        /// <see cref="object"/> assignable to the collection property. Or <c>null</c> if nothing was bound.
         /// </returns>
         /// <remarks>
         /// Extensibility point that allows the bound collection to be manipulated or transformed before being
@@ -199,8 +199,9 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             var targetCollection = target as ICollection<TElement>;
             Debug.Assert(targetCollection != null); // This binder is instantiated only for ICollection model types.
 
-            if (sourceCollection != null && targetCollection != null)
+            if (sourceCollection != null && targetCollection != null && !targetCollection.IsReadOnly)
             {
+                targetCollection.Clear();
                 foreach (var element in sourceCollection)
                 {
                     targetCollection.Add(element);

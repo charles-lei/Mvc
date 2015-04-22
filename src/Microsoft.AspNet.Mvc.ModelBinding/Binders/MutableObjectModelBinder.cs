@@ -572,8 +572,9 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
         {
             var targetCollection = (ICollection<TElement>)target;
             var sourceCollection = source as IEnumerable<TElement>;
-            if (sourceCollection != null)
+            if (sourceCollection != null && !targetCollection.IsReadOnly)
             {
+                targetCollection.Clear();
                 foreach (var item in sourceCollection)
                 {
                     targetCollection.Add(item);

@@ -74,7 +74,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
         [InlineData(true, 0)]
         [InlineData(true, 1)]
         [InlineData(true, 2)]
-        public async Task BindModelAsync_BindingContextModelNonNull_Succeeds(bool isReadOnly, int arrayLength)
+        public async Task BindModelAsync_BindingContextModelNonNull_FailsSilently(bool isReadOnly, int arrayLength)
         {
             // Arrange
             var valueProvider = new SimpleHttpValueProvider
@@ -82,11 +82,14 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
                 { "someName[0]", "42" },
                 { "someName[1]", "84" },
             };
-            var expected = new[] { 42, 84 };
 
             var bindingContext = GetBindingContext(valueProvider, isReadOnly);
             var modelState = bindingContext.ModelState;
             var array = new int[arrayLength];
+            for (var i = 0; i < arrayLength; i++)
+            {
+                array[i] = 357;
+            }
             bindingContext.Model = array;
             var binder = new ArrayModelBinder<int>();
 
@@ -99,9 +102,10 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
             Assert.Same(array, result.Model);
 
             Assert.True(modelState.IsValid);
-            for (int i = 0; i < arrayLength; i++)
+            for (var i = 0; i < arrayLength; i++)
             {
-                Assert.Equal(expected[i], array[i]);
+                // Array should be unchanged.
+                Assert.Equal(357, array[i]);
             }
         }
 

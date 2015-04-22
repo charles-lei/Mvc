@@ -4,12 +4,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Mvc.Core;
 using Microsoft.AspNet.Mvc.ModelBinding;
 using Microsoft.AspNet.Mvc.ModelBinding.Validation;
 using Microsoft.Framework.Internal;
-using Microsoft.Framework.OptionsModel;
 
 namespace Microsoft.AspNet.Mvc
 {
@@ -19,6 +19,9 @@ namespace Microsoft.AspNet.Mvc
     /// </summary>
     public class DefaultControllerActionArgumentBinder : IControllerActionArgumentBinder
     {
+        private static readonly MethodInfo CallPropertyAddRangeOpenGenericMethod =
+            typeof(MutableObjectModelBinder).GetTypeInfo().GetDeclaredMethod(nameof(CallPropertyAddRange));
+
         private readonly IModelMetadataProvider _modelMetadataProvider;
         private readonly IObjectModelValidator _validator;
 
@@ -98,6 +101,21 @@ namespace Microsoft.AspNet.Mvc
             return modelBindingResult;
         }
 
+        // Called via reflection.
+        private static void CallPropertyAddRange<TElement>(object target, object source)
+        {
+            var targetCollection = (ICollection<TElement>)target;
+            var sourceCollection = source as IEnumerable<TElement>;
+            if (sourceCollection != null && !targetCollection.IsReadOnly)
+            {
+                targetCollection.Clear();
+                foreach (var item in sourceCollection)
+                {
+                    targetCollection.Add(item);
+                }
+            }
+        }
+
         private void ActivateProperties(object controller, Type containerType, Dictionary<string, object> properties)
         {
             var propertyHelpers = PropertyHelper.GetProperties(controller);
@@ -105,17 +123,53 @@ namespace Microsoft.AspNet.Mvc
             {
                 var propertyHelper = propertyHelpers.First(helper =>
                     string.Equals(helper.Name, property.Key, StringComparison.Ordinal));
-                if (propertyHelper.Property == null || !propertyHelper.Property.CanWrite)
+                if (propertyHelper.Property == null)
                 {
-                    // nothing to do
-                    return;
+                    // Nothing to do if property is unknown to PropertyHelper.
+                    continue;
                 }
 
-                // Do not set the property if the type is a non nullable type.
-                if (property.Value != null || propertyHelper.Property.PropertyType.AllowsNullValue())
+                if (propertyHelper.Property.CanWrite)
                 {
-                    propertyHelper.SetValue(controller, property.Value);
+                    // Handle settable property.
+                    // Do not set the property if the type is a non nullable type.
+                    if (property.Value != null || propertyHelper.Property.PropertyType.AllowsNullValue())
+                    {
+                        propertyHelper.SetValue(controller, property.Value);
+                    }
+
+                    continue;
                 }
+
+                var propertyType = propertyHelper.Property.PropertyType;
+                if (propertyType.IsArray)
+                {
+                    // Do not attempt to copy values into an array because an array's length is immutable. This choice
+                    // is also consistent with MutableObjectModelBinder's handling of a read-only array property.
+                    continue;
+                }
+
+                var source = property.Value;
+                var target = propertyHelper.GetValue(controller);
+                if (source == null || target == null)
+                {
+                    // Nothing to do when source or target is null.
+                    continue;
+                }
+
+                // Determine T if this is an ICollection<T> property.
+                var elementTypeArray = propertyType
+                    .ExtractGenericInterface(typeof(ICollection<>))
+                    ?.GenericTypeArguments;
+                if (elementTypeArray == null)
+                {
+                    // Not a collection model.
+                    continue;
+                }
+
+                // Handle a read-only collection property.
+                var propertyAddRange = CallPropertyAddRangeOpenGenericMethod.MakeGenericMethod(elementTypeArray);
+                propertyAddRange.Invoke(obj: null, parameters: new[] { target, source });
             }
         }
 

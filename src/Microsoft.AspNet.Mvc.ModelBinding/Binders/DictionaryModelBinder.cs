@@ -16,12 +16,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
         /// <inheritdoc />
         protected override object GetModel(IEnumerable<KeyValuePair<TKey, TValue>> newCollection)
         {
-            if (newCollection == null)
-            {
-                return null;
-            }
-
-            return newCollection.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            return newCollection?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         }
     }
 }

@@ -3,12 +3,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Http;
 using Microsoft.AspNet.Mvc.ModelBinding;
-using Microsoft.AspNet.Mvc.ModelBinding.Metadata;
 using Microsoft.AspNet.Mvc.ModelBinding.Validation;
 using Microsoft.AspNet.Routing;
 using Moq;
@@ -76,7 +74,6 @@ namespace Microsoft.AspNet.Mvc.Core.Test
             };
 
             var modelMetadataProvider = TestModelMetadataProvider.CreateDefaultProvider();
-            
             var argumentBinder = GetArgumentBinder();
 
             // Act
@@ -325,8 +322,8 @@ namespace Microsoft.AspNet.Mvc.Core.Test
             actionDescriptor.BoundProperties.Add(
                 new ParameterDescriptor
                 {
-                    Name = "ValueBinderMarkedProperty",
-                        BindingInfo = new BindingInfo(),
+                    Name = nameof(TestController.ValueBinderMarkedProperty),
+                    BindingInfo = new BindingInfo(),
                     ParameterType = typeof(string)
                 });
 
@@ -340,6 +337,35 @@ namespace Microsoft.AspNet.Mvc.Core.Test
 
             // Assert
             Assert.Equal("Hello", controller.ValueBinderMarkedProperty);
+            Assert.Equal(new List<string> { "cleared" }, controller.CollectionValueBinderMarkedProperty);
+            Assert.Null(controller.UnmarkedProperty);
+        }
+
+        [Fact]
+        public async Task BindActionArgumentsAsync_AddsToCollectionControllerProperties()
+        {
+            // Arrange
+            var actionDescriptor = GetActionDescriptor();
+            actionDescriptor.BoundProperties.Add(
+                new ParameterDescriptor
+                {
+                    Name = nameof(TestController.CollectionValueBinderMarkedProperty),
+                    BindingInfo = new BindingInfo(),
+                    ParameterType = typeof(ICollection<string>),
+                });
+
+            var expected = new List<string> { "Hello", "World", "!!" };
+            var actionContext = GetActionContext(actionDescriptor);
+            var actionBindingContext = GetActionBindingContext(model: expected);
+            var argumentBinder = GetArgumentBinder();
+            var controller = new TestController();
+
+            // Act
+            var result = await argumentBinder.BindActionArgumentsAsync(actionContext, actionBindingContext, controller);
+
+            // Assert
+            Assert.Equal(expected, controller.CollectionValueBinderMarkedProperty);
+            Assert.Null(controller.ValueBinderMarkedProperty);
             Assert.Null(controller.UnmarkedProperty);
         }
 
@@ -441,11 +467,16 @@ namespace Microsoft.AspNet.Mvc.Core.Test
 
         private static ActionBindingContext GetActionBindingContext()
         {
+            return GetActionBindingContext("Hello");
+        }
+
+        private static ActionBindingContext GetActionBindingContext(object model)
+        {
             var binder = new Mock<IModelBinder>();
             binder
                 .Setup(b => b.BindModelAsync(It.IsAny<ModelBindingContext>()))
                 .Returns(Task.FromResult(
-                    result: new ModelBindingResult(model: "Hello", key: string.Empty, isModelSet: true)));
+                    result: new ModelBindingResult(model: model, key: string.Empty, isModelSet: true)));
             return new ActionBindingContext()
             {
                 ModelBinder = binder.Object,
@@ -470,8 +501,8 @@ namespace Microsoft.AspNet.Mvc.Core.Test
         {
             public string UnmarkedProperty { get; set; }
 
-            [NonValueProviderBinderMetadata]
-            public string NonValueBinderMarkedProperty { get; set; }
+            [ValueProviderMetadata]
+            public ICollection<string> CollectionValueBinderMarkedProperty { get; } = new List<string> { "cleared" };
 
             [ValueProviderMetadata]
             public string ValueBinderMarkedProperty { get; set; }
