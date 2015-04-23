@@ -72,7 +72,6 @@ namespace Microsoft.AspNet.Mvc
             OperationBindingContext operationContext)
         {
             var metadata = _modelMetadataProvider.GetMetadataForType(parameter.ParameterType);
-            var parameterType = parameter.ParameterType;
             var modelBindingContext = GetModelBindingContext(
                 parameter.Name,
                 metadata,
@@ -118,39 +117,37 @@ namespace Microsoft.AspNet.Mvc
 
         private void ActivateProperties(object controller, Type containerType, Dictionary<string, object> properties)
         {
-            var propertyHelpers = PropertyHelper.GetProperties(controller);
+            var containerExplorer = _modelMetadataProvider.GetModelExplorerForType(containerType, controller);
             foreach (var property in properties)
             {
-                var propertyHelper = propertyHelpers.First(helper =>
-                    string.Equals(helper.Name, property.Key, StringComparison.Ordinal));
-                if (propertyHelper.Property == null)
+                var propertyExplorer = containerExplorer.GetExplorerForProperty(property.Key);
+                var propertyMetadata = propertyExplorer?.Metadata;
+                if (propertyMetadata == null)
                 {
-                    // Nothing to do if property is unknown to PropertyHelper.
+                    // Nothing to do if property is unknown to the ModelMetadataProvider.
                     continue;
                 }
 
-                if (propertyHelper.Property.CanWrite)
+                var source = property.Value;
+                if (!propertyMetadata.IsReadOnly)
                 {
-                    // Handle settable property.
-                    // Do not set the property if the type is a non nullable type.
-                    if (property.Value != null || propertyHelper.Property.PropertyType.AllowsNullValue())
+                    // Handle settable property. Do not set the property if the type is a non nullable type.
+                    if (source != null || propertyMetadata.ModelType.AllowsNullValue())
                     {
-                        propertyHelper.SetValue(controller, property.Value);
+                        propertyMetadata.PropertySetter(controller, source);
                     }
 
                     continue;
                 }
 
-                var propertyType = propertyHelper.Property.PropertyType;
-                if (propertyType.IsArray)
+                if (propertyExplorer.ModelType.IsArray)
                 {
                     // Do not attempt to copy values into an array because an array's length is immutable. This choice
                     // is also consistent with MutableObjectModelBinder's handling of a read-only array property.
                     continue;
                 }
 
-                var source = property.Value;
-                var target = propertyHelper.GetValue(controller);
+                var target = propertyExplorer.Model;
                 if (source == null || target == null)
                 {
                     // Nothing to do when source or target is null.
@@ -158,7 +155,7 @@ namespace Microsoft.AspNet.Mvc
                 }
 
                 // Determine T if this is an ICollection<T> property.
-                var elementTypeArray = propertyType
+                var elementTypeArray = propertyExplorer.ModelType
                     .ExtractGenericInterface(typeof(ICollection<>))
                     ?.GenericTypeArguments;
                 if (elementTypeArray == null)
