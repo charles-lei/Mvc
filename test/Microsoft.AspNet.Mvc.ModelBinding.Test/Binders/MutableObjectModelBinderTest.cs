@@ -305,7 +305,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
 
                     return null;
                 });
-            
+
             var modelMetadata = GetMetadataForType(modelType);
             var bindingContext = new MutableObjectBinderContext
             {

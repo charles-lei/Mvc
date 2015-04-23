@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Mvc.Core;
@@ -20,7 +19,8 @@ namespace Microsoft.AspNet.Mvc
     public class DefaultControllerActionArgumentBinder : IControllerActionArgumentBinder
     {
         private static readonly MethodInfo CallPropertyAddRangeOpenGenericMethod =
-            typeof(MutableObjectModelBinder).GetTypeInfo().GetDeclaredMethod(nameof(CallPropertyAddRange));
+            typeof(DefaultControllerActionArgumentBinder).GetTypeInfo().GetDeclaredMethod(
+                nameof(CallPropertyAddRange));
 
         private readonly IModelMetadataProvider _modelMetadataProvider;
         private readonly IObjectModelValidator _validator;
@@ -67,9 +67,9 @@ namespace Microsoft.AspNet.Mvc
         }
 
         public async Task<ModelBindingResult> BindModelAsync(
-            ParameterDescriptor parameter,
-            ModelStateDictionary modelState,
-            OperationBindingContext operationContext)
+            [NotNull] ParameterDescriptor parameter,
+            [NotNull] ModelStateDictionary modelState,
+            [NotNull] OperationBindingContext operationContext)
         {
             var metadata = _modelMetadataProvider.GetMetadataForType(parameter.ParameterType);
             var modelBindingContext = GetModelBindingContext(
@@ -155,17 +155,18 @@ namespace Microsoft.AspNet.Mvc
                 }
 
                 // Determine T if this is an ICollection<T> property.
-                var elementTypeArray = propertyExplorer.ModelType
+                var collectionTypeArguments = propertyExplorer.ModelType
                     .ExtractGenericInterface(typeof(ICollection<>))
                     ?.GenericTypeArguments;
-                if (elementTypeArray == null)
+                if (collectionTypeArguments == null)
                 {
                     // Not a collection model.
                     continue;
                 }
 
                 // Handle a read-only collection property.
-                var propertyAddRange = CallPropertyAddRangeOpenGenericMethod.MakeGenericMethod(elementTypeArray);
+                var propertyAddRange = CallPropertyAddRangeOpenGenericMethod.MakeGenericMethod(
+                    collectionTypeArguments);
                 propertyAddRange.Invoke(obj: null, parameters: new[] { target, source });
             }
         }

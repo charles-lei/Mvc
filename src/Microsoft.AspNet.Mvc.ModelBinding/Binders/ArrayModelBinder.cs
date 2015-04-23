@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Framework.Internal;
@@ -18,7 +17,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
         /// <inheritdoc />
         public override Task<ModelBindingResult> BindModelAsync([NotNull] ModelBindingContext bindingContext)
         {
-            if (bindingContext.Model == null && bindingContext.ModelMetadata.IsReadOnly)
+            if (bindingContext.ModelMetadata.IsReadOnly)
             {
                 return Task.FromResult<ModelBindingResult>(null);
             }

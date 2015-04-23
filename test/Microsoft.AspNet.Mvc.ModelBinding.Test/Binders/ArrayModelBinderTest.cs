@@ -29,7 +29,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
             // Assert
             Assert.NotNull(result);
 
-            int[] array = result.Model as int[];
+            var array = Assert.IsType<int[]>(result.Model);
             Assert.Equal(new[] { 42, 84 }, array);
             Assert.True(modelState.IsValid);
         }
@@ -48,8 +48,23 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
             Assert.Null(result);
         }
 
-        [Fact]
-        public async Task BindModelAsync_ModelMetadataReturnsReadOnly_ReturnsNull()
+        public static TheoryData<int[]> ArrayModelData
+        {
+            get
+            {
+                return new TheoryData<int[]>
+                {
+                    new int[0],
+                    new [] { 357 },
+                    new [] { 357, 357 },
+                };
+            }
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [MemberData(nameof(ArrayModelData))]
+        public async Task BindModelAsync_ModelMetadataReadOnly_ReturnsNull(int[] model)
         {
             // Arrange
             var valueProvider = new SimpleHttpValueProvider
@@ -58,6 +73,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
                 { "someName[1]", "84" },
             };
             var bindingContext = GetBindingContext(valueProvider, isReadOnly: true);
+            bindingContext.Model = model;
             var binder = new ArrayModelBinder<int>();
 
             // Act
@@ -67,30 +83,22 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
             Assert.Null(result);
         }
 
+        // Here "fails silently" means the call does not update the array but also does not throw or set an error.
         [Theory]
-        [InlineData(false, 0)]
-        [InlineData(false, 1)]
-        [InlineData(false, 2)]
-        [InlineData(true, 0)]
-        [InlineData(true, 1)]
-        [InlineData(true, 2)]
-        public async Task BindModelAsync_BindingContextModelNonNull_FailsSilently(bool isReadOnly, int arrayLength)
+        [MemberData(nameof(ArrayModelData))]
+        public async Task BindModelAsync_ModelMetadataNotReadOnly_ModelNonNull_FailsSilently(int[] model)
         {
             // Arrange
+            var arrayLength = model.Length;
             var valueProvider = new SimpleHttpValueProvider
             {
                 { "someName[0]", "42" },
                 { "someName[1]", "84" },
             };
 
-            var bindingContext = GetBindingContext(valueProvider, isReadOnly);
+            var bindingContext = GetBindingContext(valueProvider, isReadOnly: false);
             var modelState = bindingContext.ModelState;
-            var array = new int[arrayLength];
-            for (var i = 0; i < arrayLength; i++)
-            {
-                array[i] = 357;
-            }
-            bindingContext.Model = array;
+            bindingContext.Model = model;
             var binder = new ArrayModelBinder<int>();
 
             // Act
@@ -99,13 +107,13 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
             // Assert
             Assert.NotNull(result);
             Assert.True(result.IsModelSet);
-            Assert.Same(array, result.Model);
+            Assert.Same(model, result.Model);
 
             Assert.True(modelState.IsValid);
             for (var i = 0; i < arrayLength; i++)
             {
                 // Array should be unchanged.
-                Assert.Equal(357, array[i]);
+                Assert.Equal(357, model[i]);
             }
         }
 

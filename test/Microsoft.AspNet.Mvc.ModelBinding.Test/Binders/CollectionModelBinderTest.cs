@@ -79,8 +79,10 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
             // Assert
             Assert.NotNull(result);
             Assert.True(result.IsModelSet);
+
             var list = Assert.IsAssignableFrom<IList<int>>(result.Model);
             Assert.Equal(new[] { 42, 100, 200 }, list.ToArray());
+
             Assert.True(modelState.IsValid);
         }
 
@@ -109,8 +111,10 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
             // Assert
             Assert.NotNull(result);
             Assert.True(result.IsModelSet);
+
             Assert.Same(list, result.Model);
             Assert.Equal(new[] { 42, 100, 200 }, list.ToArray());
+
             Assert.True(modelState.IsValid);
         }
 
@@ -134,8 +138,10 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
             // Assert
             Assert.NotNull(result);
             Assert.True(result.IsModelSet);
+
             var list = Assert.IsAssignableFrom<IList<int>>(result.Model);
             Assert.Equal(new[] { 42, 100, 200 }, list.ToArray());
+
             Assert.True(modelState.IsValid);
         }
 
@@ -161,8 +167,10 @@ namespace Microsoft.AspNet.Mvc.ModelBinding.Test
             // Assert
             Assert.NotNull(result);
             Assert.True(result.IsModelSet);
+
             Assert.Same(list, result.Model);
             Assert.Equal(new[] { 42, 100, 200 }, list.ToArray());
+
             Assert.True(modelState.IsValid);
         }
 #endif

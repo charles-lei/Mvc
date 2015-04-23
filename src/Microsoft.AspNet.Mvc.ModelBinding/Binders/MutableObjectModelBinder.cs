@@ -513,10 +513,14 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
 
             if (value != null || property.PropertyType.AllowsNullValue())
             {
-                TryAction(
-                    bindingContext,
-                    dtoResult,
-                    () => propertyMetadata.PropertySetter(bindingContext.Model, value));
+                try
+                {
+                    propertyMetadata.PropertySetter(bindingContext.Model, value);
+                }
+                catch (Exception exception)
+                {
+                    AddModelError(exception, bindingContext, dtoResult);
+                }
             }
             else
             {
@@ -551,20 +555,24 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             // Determine T if this is an ICollection<T> property. No need for a T[] case because CanUpdateProperty()
             // ensures property is either settable or not an array. Underlying assumption is that CanUpdateProperty()
             // and SetProperty() are overridden together.
-            var elementTypeArray = propertyExplorer.ModelType
+            var collectionTypeArguments = propertyExplorer.ModelType
                 .ExtractGenericInterface(typeof(ICollection<>))
                 ?.GenericTypeArguments;
-            if (elementTypeArray == null)
+            if (collectionTypeArguments == null)
             {
                 // Not a collection model.
                 return;
             }
 
-            var propertyAddRange = CallPropertyAddRangeOpenGenericMethod.MakeGenericMethod(elementTypeArray);
-            TryAction(
-                bindingContext,
-                dtoResult,
-                () => propertyAddRange.Invoke(obj: null, parameters: new[] { target, source }));
+            var propertyAddRange = CallPropertyAddRangeOpenGenericMethod.MakeGenericMethod(collectionTypeArguments);
+            try
+            {
+                propertyAddRange.Invoke(obj: null, parameters: new[] { target, source });
+            }
+            catch (Exception exception)
+            {
+                AddModelError(exception, bindingContext, dtoResult);
+            }
         }
 
         // Called via reflection.
@@ -582,28 +590,24 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             }
         }
 
-        private static void TryAction(ModelBindingContext bindingContext, ModelBindingResult dtoResult, Action action)
+        private static void AddModelError(
+            Exception exception,
+            ModelBindingContext bindingContext,
+            ModelBindingResult dtoResult)
         {
-            try
+            var targetInvocationException = exception as TargetInvocationException;
+            if (targetInvocationException != null && targetInvocationException.InnerException != null)
             {
-                action();
+                exception = targetInvocationException.InnerException;
             }
-            catch (Exception exception)
-            {
-                var targetInvocationException = exception as TargetInvocationException;
-                if (targetInvocationException != null &&
-                    targetInvocationException.InnerException != null)
-                {
-                    exception = targetInvocationException.InnerException;
-                }
 
-                // Do not add an error message if a binding error has already occurred for this property.
-                var modelStateKey = dtoResult.Key;
-                var validationState = bindingContext.ModelState.GetFieldValidationState(modelStateKey);
-                if (validationState == ModelValidationState.Unvalidated)
-                {
-                    bindingContext.ModelState.AddModelError(modelStateKey, exception);
-                }
+            // Do not add an error message if a binding error has already occurred for this property.
+            var modelState = bindingContext.ModelState;
+            var modelStateKey = dtoResult.Key;
+            var validationState = modelState.GetFieldValidationState(modelStateKey);
+            if (validationState == ModelValidationState.Unvalidated)
+            {
+                modelState.AddModelError(modelStateKey, exception);
             }
         }
 
