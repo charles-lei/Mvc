@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Http;
 using Microsoft.AspNet.Mvc.ModelBinding;
@@ -25,14 +26,14 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             var expectedTagName = "not-form";
             var metadataProvider = new TestModelMetadataProvider();
             var tagHelperContext = new TagHelperContext(
-                allAttributes: new Dictionary<string, object>
+                allAttributes: new TagHelperAttributes
                 {
-                    { "id", "myform" },
-                    { "asp-route-foo", "bar" },
-                    { "asp-action", "index" },
-                    { "asp-controller", "home" },
-                    { "method", "post" },
-                    { "asp-anti-forgery", true }
+                    ["id"] = "myform",
+                    ["asp-route-foo"] = "bar",
+                    ["asp-action"] = "index",
+                    ["asp-controller"] = "home",
+                    ["method"] = "post",
+                    ["asp-anti-forgery"] = new TagHelperAttribute("asp-anti-forgery", true)
                 },
                 items: new Dictionary<object, object>(),
                 uniqueId: "test",
@@ -44,10 +45,10 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
                 });
             var output = new TagHelperOutput(
                 expectedTagName,
-                attributes: new Dictionary<string, object>
+                attributes: new TagHelperAttributes
                 {
-                    { "id", "myform" },
-                    { "asp-route-foo", "bar" },
+                    ["id"] = "myform",
+                    ["asp-route-foo"] = "bar",
                 });
             output.PostContent.SetContent("Something");
             var urlHelper = new Mock<IUrlHelper>();
@@ -74,11 +75,11 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
 
             // Assert
             Assert.Equal(3, output.Attributes.Count);
-            var attribute = Assert.Single(output.Attributes, kvp => kvp.Key.Equals("id"));
+            var attribute = Assert.Single(output.Attributes, kvp => kvp.Name.Equals("id"));
             Assert.Equal("myform", attribute.Value);
-            attribute = Assert.Single(output.Attributes, kvp => kvp.Key.Equals("method"));
+            attribute = Assert.Single(output.Attributes, kvp => kvp.Name.Equals("method"));
             Assert.Equal("post", attribute.Value);
-            attribute = Assert.Single(output.Attributes, kvp => kvp.Key.Equals("action"));
+            attribute = Assert.Single(output.Attributes, kvp => kvp.Name.Equals("action"));
             Assert.Equal("home/index", attribute.Value);
             Assert.Empty(output.PreContent.GetContent());
             Assert.True(output.Content.IsEmpty);
@@ -97,7 +98,8 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             // Arrange
             var viewContext = CreateViewContext();
             var context = new TagHelperContext(
-                allAttributes: new Dictionary<string, object>(),
+                allAttributes: new ReadOnlyTagHelperAttributes<IReadOnlyTagHelperAttribute>(
+                    Enumerable.Empty<IReadOnlyTagHelperAttribute>()),
                 items: new Dictionary<object, object>(),
                 uniqueId: "test",
                 getChildContentAsync: () =>
@@ -108,7 +110,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
                 });
             var output = new TagHelperOutput(
                 "form",
-                attributes: new Dictionary<string, object>());
+                attributes: new TagHelperAttributes());
             var generator = new Mock<IHtmlGenerator>(MockBehavior.Strict);
             generator
                 .Setup(mock => mock.GenerateForm(
@@ -148,7 +150,8 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             // Arrange
             var testViewContext = CreateViewContext();
             var context = new TagHelperContext(
-                allAttributes: new Dictionary<string, object>(),
+                allAttributes: new ReadOnlyTagHelperAttributes<IReadOnlyTagHelperAttribute>(
+                    Enumerable.Empty<IReadOnlyTagHelperAttribute>()),
                 items: new Dictionary<object, object>(),
                 uniqueId: "test",
                 getChildContentAsync: () =>
@@ -157,13 +160,13 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
                     tagHelperContent.SetContent("Something");
                     return Task.FromResult<TagHelperContent>(tagHelperContent);
                 });
-            var expectedAttribute = new KeyValuePair<string, object>("asp-ROUTEE-NotRoute", "something");
+            var expectedAttribute = new TagHelperAttribute("asp-ROUTEE-NotRoute", "something");
             var output = new TagHelperOutput(
                 "form",
-                attributes: new Dictionary<string, object>()
+                attributes: new TagHelperAttributes()
                 {
-                    { "asp-route-val", "hello" },
-                    { "asp-roUte--Foo", "bar" }
+                    ["asp-route-val"] = "hello",
+                    ["asp-roUte--Foo"] = "bar"
                 });
             output.Attributes.Add(expectedAttribute);
 
@@ -219,7 +222,8 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             // Arrange
             var viewContext = CreateViewContext();
             var context = new TagHelperContext(
-                allAttributes: new Dictionary<string, object>(),
+                allAttributes: new ReadOnlyTagHelperAttributes<IReadOnlyTagHelperAttribute>(
+                    Enumerable.Empty<IReadOnlyTagHelperAttribute>()),
                 items: new Dictionary<object, object>(),
                 uniqueId: "test",
                 getChildContentAsync: () =>
@@ -230,7 +234,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
                 });
             var output = new TagHelperOutput(
                 "form",
-                attributes: new Dictionary<string, object>());
+                attributes: new TagHelperAttributes());
             var generator = new Mock<IHtmlGenerator>(MockBehavior.Strict);
             generator
                 .Setup(mock => mock.GenerateForm(viewContext, "Index", "Home", null, null, null))
@@ -279,12 +283,13 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             };
 
             var output = new TagHelperOutput("form",
-                                             attributes: new Dictionary<string, object>
+                                             attributes: new TagHelperAttributes
                                              {
-                                                 { "aCTiON", "my-action" },
+                                                 ["aCTiON"] = "my-action",
                                              });
             var context = new TagHelperContext(
-                allAttributes: new Dictionary<string, object>(),
+                allAttributes: new ReadOnlyTagHelperAttributes<IReadOnlyTagHelperAttribute>(
+                    Enumerable.Empty<IReadOnlyTagHelperAttribute>()),
                 items: new Dictionary<object, object>(),
                 uniqueId: "test",
                 getChildContentAsync: () =>
@@ -302,7 +307,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             Assert.Equal("form", output.TagName);
             Assert.False(output.SelfClosing);
             var attribute = Assert.Single(output.Attributes);
-            Assert.Equal(new KeyValuePair<string, object>("aCTiON", "my-action"), attribute);
+            Assert.Equal(new TagHelperAttribute("aCTiON", "my-action"), attribute);
             Assert.Empty(output.PreContent.GetContent());
             Assert.True(output.Content.IsEmpty);
             Assert.Equal(expectedPostContent, output.PostContent.GetContent());
@@ -318,13 +323,13 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             var formTagHelper = new FormTagHelper();
             var tagHelperOutput = new TagHelperOutput(
                 "form",
-                attributes: new Dictionary<string, object>
+                attributes: new TagHelperAttributes
                 {
-                    { "action", "my-action" },
+                    ["action"] = "my-action",
                 });
             if (propertyName == "asp-route-")
             {
-                tagHelperOutput.Attributes.Add("asp-route-foo", "bar");
+                tagHelperOutput.Attributes.Add(new TagHelperAttribute("asp-route-foo", "bar"));
             }
             else
             {

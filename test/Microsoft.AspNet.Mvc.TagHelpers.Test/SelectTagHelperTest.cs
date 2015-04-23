@@ -171,17 +171,17 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             string ignored)
         {
             // Arrange
-            var originalAttributes = new Dictionary<string, object>
+            var originalAttributes = new TagHelperAttributes
             {
-                { "class", "form-control" },
+                ["class"] = "form-control",
             };
             var originalPostContent = "original content";
 
-            var expectedAttributes = new Dictionary<string, object>(originalAttributes)
+            var expectedAttributes = new TagHelperAttributes(originalAttributes)
             {
-                { "id", nameAndId.Id },
-                { "name", nameAndId.Name },
-                { "valid", "from validation attributes" },
+                ["id"] = nameAndId.Id,
+                ["name"] = nameAndId.Name,
+                ["valid"] = "from validation attributes",
             };
             var expectedPreContent = "original pre-content";
             var expectedContent = "original content";
@@ -198,7 +198,8 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             var modelExpression = new ModelExpression(nameAndId.Name, modelExplorer);
 
             var tagHelperContext = new TagHelperContext(
-                allAttributes: new Dictionary<string, object>(),
+                allAttributes: new ReadOnlyTagHelperAttributes<IReadOnlyTagHelperAttribute>(
+                    Enumerable.Empty<IReadOnlyTagHelperAttribute>()),
                 items: new Dictionary<object, object>(),
                 uniqueId: "test",
                 getChildContentAsync: () =>
@@ -257,17 +258,17 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             string expectedOptions)
         {
             // Arrange
-            var originalAttributes = new Dictionary<string, object>
+            var originalAttributes = new TagHelperAttributes
             {
-                { "class", "form-control" },
+                ["class"] = "form-control",
             };
             var originalPostContent = "original content";
 
-            var expectedAttributes = new Dictionary<string, object>(originalAttributes)
+            var expectedAttributes = new TagHelperAttributes(originalAttributes)
             {
-                { "id", nameAndId.Id },
-                { "name", nameAndId.Name },
-                { "valid", "from validation attributes" },
+                ["id"] = nameAndId.Id,
+                ["name"] = nameAndId.Name,
+                ["valid"] = "from validation attributes",
             };
             var expectedPreContent = "original pre-content";
             var expectedContent = "original content";
@@ -285,7 +286,8 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             var modelExpression = new ModelExpression(nameAndId.Name, modelExplorer);
 
             var tagHelperContext = new TagHelperContext(
-                allAttributes: new Dictionary<string, object>(),
+                allAttributes: new ReadOnlyTagHelperAttributes<IReadOnlyTagHelperAttribute>(
+                    Enumerable.Empty<IReadOnlyTagHelperAttribute>()),
                 items: new Dictionary<object, object>(),
                 uniqueId: "test",
                 getChildContentAsync: () =>
@@ -358,17 +360,17 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             string expectedOptions)
         {
             // Arrange
-            var originalAttributes = new Dictionary<string, object>
+            var originalAttributes = new TagHelperAttributes
             {
-                { "class", "form-control" },
+                ["class"] = "form-control",
             };
             var originalPostContent = "original content";
 
-            var expectedAttributes = new Dictionary<string, object>(originalAttributes)
+            var expectedAttributes = new TagHelperAttributes(originalAttributes)
             {
-                { "id", nameAndId.Id },
-                { "name", nameAndId.Name },
-                { "valid", "from validation attributes" },
+                ["id"] = nameAndId.Id,
+                ["name"] = nameAndId.Name,
+                ["valid"] = "from validation attributes",
             };
             var expectedPreContent = "original pre-content";
             var expectedContent = "original content";
@@ -386,7 +388,8 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             var modelExpression = new ModelExpression(name: string.Empty, modelExplorer: modelExplorer);
 
             var tagHelperContext = new TagHelperContext(
-                allAttributes: new Dictionary<string, object>(),
+                allAttributes: new ReadOnlyTagHelperAttributes<IReadOnlyTagHelperAttribute>(
+                    Enumerable.Empty<IReadOnlyTagHelperAttribute>()),
                 items: new Dictionary<object, object>(),
                 uniqueId: "test",
                 getChildContentAsync: () =>
@@ -459,14 +462,14 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             IEnumerable<SelectListItem> expectedItems)
         {
             // Arrange
-            var contextAttributes = new Dictionary<string, object>
+            var contextAttributes = new TagHelperAttributes
             {
                 // Provided for completeness. Select tag helper does not confirm AllAttributes set is consistent.
-                { attributeName, attributeValue },
+                [attributeName] = attributeValue,
             };
-            var originalAttributes = new Dictionary<string, object>
+            var originalAttributes = new TagHelperAttributes
             {
-                { attributeName, attributeValue },
+                [attributeName] = attributeValue,
             };
             var propertyName = "Property1";
             var expectedTagName = "select";
@@ -545,8 +548,9 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             bool allowMultiple)
         {
             // Arrange
-            var contextAttributes = new Dictionary<string, object>();
-            var originalAttributes = new Dictionary<string, object>();
+            var contextAttributes = new ReadOnlyTagHelperAttributes<IReadOnlyTagHelperAttribute>(
+                    Enumerable.Empty<IReadOnlyTagHelperAttribute>());
+            var originalAttributes = new TagHelperAttributes();
             var propertyName = "Property1";
             var tagName = "select";
 

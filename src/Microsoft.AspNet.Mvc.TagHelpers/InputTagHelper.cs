@@ -219,8 +219,8 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
 
             // Prepare to move attributes from current element to <input type="checkbox"/> generated just below.
             var htmlAttributes = output.Attributes.ToDictionary(
-                attribute => attribute.Key,
-                attribute => (object)attribute.Value);
+                attribute => attribute.Name,
+                attribute => attribute.Value);
 
             var tagBuilder = Generator.GenerateCheckBox(
                 ViewContext,

@@ -86,7 +86,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
 
                     if (selected)
                     {
-                        output.Attributes.Add("selected", "selected");
+                        output.Attributes.Add(new TagHelperAttribute("selected", "selected"));
                     }
                 }
             }

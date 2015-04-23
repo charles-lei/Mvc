@@ -22,11 +22,11 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             // Arrange
             var tagHelperOutput = new TagHelperOutput(
                 "p",
-                attributes: new Dictionary<string, object>());
+                attributes: new TagHelperAttributes());
             var tagHelperContext = new TagHelperContext(
-                allAttributes: new Dictionary<string, object>(StringComparer.Ordinal)
+                allAttributes: new TagHelperAttributes
                 {
-                    { attributeName, attributeValue }
+                    [attributeName] = attributeValue
                 },
                 items: new Dictionary<object, object>(),
                 uniqueId: "test",
@@ -36,7 +36,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
                     tagHelperContent.Append("Something");
                     return Task.FromResult<TagHelperContent>(tagHelperContent);
                 });
-            var expectedAttribute = new KeyValuePair<string, object>(attributeName, attributeValue);
+            var expectedAttribute = new TagHelperAttribute(attributeName, attributeValue);
 
             // Act
             tagHelperOutput.CopyHtmlAttribute("hello", tagHelperContext);
@@ -53,15 +53,15 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             var attributeName = "hello";
             var tagHelperOutput = new TagHelperOutput(
                 "p",
-                attributes: new Dictionary<string, object>()
+                attributes: new TagHelperAttributes()
                 {
-                    { attributeName, "world2" }
+                    [attributeName] = "world2"
                 });
-            var expectedAttribute = new KeyValuePair<string, object>(attributeName, "world2");
+            var expectedAttribute = new TagHelperAttribute(attributeName, "world2");
             var tagHelperContext = new TagHelperContext(
-                allAttributes: new Dictionary<string, object>(StringComparer.Ordinal)
+                allAttributes: new TagHelperAttributes
                 {
-                    { attributeName, "world" }
+                    [attributeName] = "world"
                 },
                 items: new Dictionary<object, object>(),
                 uniqueId: "test",
@@ -87,11 +87,11 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             var invalidAttributeName = "hello2";
             var tagHelperOutput = new TagHelperOutput(
                 "p",
-                attributes: new Dictionary<string, object>());
+                attributes: new TagHelperAttributes());
             var tagHelperContext = new TagHelperContext(
-                allAttributes: new Dictionary<string, object>(StringComparer.Ordinal)
+                allAttributes: new TagHelperAttributes
                 {
-                    { "hello", "world" }
+                    ["hello"] = "world"
                 },
                 items: new Dictionary<object, object>(),
                 uniqueId: "test",
@@ -115,12 +115,12 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             // Arrange
             var tagHelperOutput = new TagHelperOutput(
                 "p",
-                attributes: new Dictionary<string, object>()
+                attributes: new TagHelperAttributes()
                 {
-                    { "route-Hello", "World" },
-                    { "Route-I", "Am" }
+                    ["route-Hello"] = "World",
+                    ["Route-I"] = "Am"
                 });
-            var expectedAttribute = new KeyValuePair<string, object>("type", "btn");
+            var expectedAttribute = new TagHelperAttribute("type", "btn");
             tagHelperOutput.Attributes.Add(expectedAttribute);
             var attributes = tagHelperOutput.FindPrefixedAttributes("route-");
 
@@ -138,10 +138,10 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             // Arrange
             var tagHelperOutput = new TagHelperOutput(
                 "p",
-                attributes: new Dictionary<string, object>()
+                attributes: new TagHelperAttributes()
                 {
-                    { "routeHello", "World" },
-                    { "Routee-I", "Am" }
+                    ["routeHello"] = "World",
+                    ["Routee-I"] = "Am"
                 });
 
             // Act
@@ -149,9 +149,9 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
 
             // Assert
             Assert.Empty(attributes);
-            var attribute = Assert.Single(tagHelperOutput.Attributes, kvp => kvp.Key.Equals("routeHello"));
+            var attribute = Assert.Single(tagHelperOutput.Attributes, attr => attr.Name.Equals("routeHello"));
             Assert.Equal(attribute.Value, "World");
-            attribute = Assert.Single(tagHelperOutput.Attributes, kvp => kvp.Key.Equals("Routee-I"));
+            attribute = Assert.Single(tagHelperOutput.Attributes, attr => attr.Name.Equals("Routee-I"));
             Assert.Equal(attribute.Value, "Am");
         }
 
@@ -161,8 +161,8 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             // Arrange
             var tagHelperOutput = new TagHelperOutput(
                 "p",
-                attributes: new Dictionary<string, object>());
-            var expectedAttribute = new KeyValuePair<string, object>("type", "btn");
+                attributes: new TagHelperAttributes());
+            var expectedAttribute = new TagHelperAttribute("type", "btn");
             tagHelperOutput.Attributes.Add(expectedAttribute);
 
             var tagBuilder = new TagBuilder("p", new HtmlEncoder());
@@ -182,13 +182,13 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             // Arrange
             var tagHelperOutput = new TagHelperOutput(
                 "p",
-                attributes: new Dictionary<string, object>());
-            tagHelperOutput.Attributes.Add("class", "Hello");
+                attributes: new TagHelperAttributes());
+            tagHelperOutput.Attributes.Add(new TagHelperAttribute("class", "Hello"));
 
             var tagBuilder = new TagBuilder("p", new HtmlEncoder());
             tagBuilder.Attributes.Add("class", "btn");
 
-            var expectedAttribute = new KeyValuePair<string, object>("class", "Hello btn");
+            var expectedAttribute = new TagHelperAttribute("class", "Hello btn");
 
             // Act
             tagHelperOutput.MergeAttributes(tagBuilder);
@@ -208,8 +208,8 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             // Arrange
             var tagHelperOutput = new TagHelperOutput(
                 "p",
-                attributes: new Dictionary<string, object>());
-            tagHelperOutput.Attributes.Add(originalName, "Hello");
+                attributes: new TagHelperAttributes());
+            tagHelperOutput.Attributes.Add(new TagHelperAttribute(originalName, "Hello"));
 
             var tagBuilder = new TagBuilder("p", new HtmlEncoder());
             tagBuilder.Attributes.Add(updateName, "btn");
@@ -219,7 +219,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
 
             // Assert
             var attribute = Assert.Single(tagHelperOutput.Attributes);
-            Assert.Equal(new KeyValuePair<string, object>(originalName, "Hello btn"), attribute);
+            Assert.Equal(new TagHelperAttribute(originalName, "Hello btn"), attribute);
         }
 
         [Fact]
@@ -228,10 +228,10 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             // Arrange
             var tagHelperOutput = new TagHelperOutput(
                 "p",
-                attributes: new Dictionary<string, object>());
+                attributes: new TagHelperAttributes());
 
             var tagBuilder = new TagBuilder("p", new HtmlEncoder());
-            var expectedAttribute = new KeyValuePair<string, object>("visible", "val < 3");
+            var expectedAttribute = new TagHelperAttribute("visible", "val < 3");
             tagBuilder.Attributes.Add("visible", "val < 3");
 
             // Act
@@ -248,11 +248,11 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             // Arrange
             var tagHelperOutput = new TagHelperOutput(
                 "p",
-                attributes: new Dictionary<string, object>());
+                attributes: new TagHelperAttributes());
 
             var tagBuilder = new TagBuilder("p", new HtmlEncoder());
-            var expectedAttribute1 = new KeyValuePair<string, object>("class", "btn");
-            var expectedAttribute2 = new KeyValuePair<string, object>("class2", "btn");
+            var expectedAttribute1 = new TagHelperAttribute("class", "btn");
+            var expectedAttribute2 = new TagHelperAttribute("class2", "btn");
             tagBuilder.Attributes.Add("class", "btn");
             tagBuilder.Attributes.Add("class2", "btn");
 
@@ -261,9 +261,9 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
 
             // Assert
             Assert.Equal(2, tagHelperOutput.Attributes.Count);
-            var attribute = Assert.Single(tagHelperOutput.Attributes, kvp => kvp.Key.Equals("class"));
+            var attribute = Assert.Single(tagHelperOutput.Attributes, attr => attr.Name.Equals("class"));
             Assert.Equal(expectedAttribute1.Value, attribute.Value);
-            attribute = Assert.Single(tagHelperOutput.Attributes, kvp => kvp.Key.Equals("class2"));
+            attribute = Assert.Single(tagHelperOutput.Attributes, attr => attr.Name.Equals("class2"));
             Assert.Equal(expectedAttribute2.Value, attribute.Value);
         }
 
@@ -273,8 +273,8 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             // Arrange
             var tagHelperOutput = new TagHelperOutput(
                 "p",
-                attributes: new Dictionary<string, object>());
-            var expectedAttribute = new KeyValuePair<string, object>("class", "btn");
+                attributes: new TagHelperAttributes());
+            var expectedAttribute = new TagHelperAttribute("class", "btn");
             tagHelperOutput.Attributes.Add(expectedAttribute);
 
             var tagBuilder = new TagBuilder("p", new HtmlEncoder());
@@ -293,12 +293,12 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             // Arrange
             var tagHelperOutput = new TagHelperOutput(
                 "p",
-                attributes: new Dictionary<string, object>());
-            var expectedOutputAttribute = new KeyValuePair<string, object>("class", "btn");
+                attributes: new TagHelperAttributes());
+            var expectedOutputAttribute = new TagHelperAttribute("class", "btn");
             tagHelperOutput.Attributes.Add(expectedOutputAttribute);
 
             var tagBuilder = new TagBuilder("p", new HtmlEncoder());
-            var expectedBuilderAttribute = new KeyValuePair<string, object>("for", "hello");
+            var expectedBuilderAttribute = new TagHelperAttribute("for", "hello");
             tagBuilder.Attributes.Add("for", "hello");
 
             // Act
@@ -306,9 +306,9 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
 
             // Assert
             Assert.Equal(tagHelperOutput.Attributes.Count, 2);
-            var attribute = Assert.Single(tagHelperOutput.Attributes, kvp => kvp.Key.Equals("class"));
+            var attribute = Assert.Single(tagHelperOutput.Attributes, attr => attr.Name.Equals("class"));
             Assert.Equal(expectedOutputAttribute.Value, attribute.Value);
-            attribute = Assert.Single(tagHelperOutput.Attributes, kvp => kvp.Key.Equals("for"));
+            attribute = Assert.Single(tagHelperOutput.Attributes, attr => attr.Name.Equals("for"));
             Assert.Equal(expectedBuilderAttribute.Value, attribute.Value);
         }
     }

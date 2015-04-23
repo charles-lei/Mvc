@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Mvc.ModelBinding;
 using Microsoft.AspNet.Mvc.Rendering;
@@ -23,15 +24,15 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             var metadataProvider = new TestModelMetadataProvider();
 
             var tagHelperContext = new TagHelperContext(
-                allAttributes: new Dictionary<string, object>
+                allAttributes: new TagHelperAttributes
                 {
-                    { "id", "myanchor" },
-                    { "asp-route-foo", "bar" },
-                    { "asp-action", "index" },
-                    { "asp-controller", "home" },
-                    { "asp-fragment", "hello=world" },
-                    { "asp-host", "contoso.com" },
-                    { "asp-protocol", "http" }
+                    ["id"] = "myanchor",
+                    ["asp-route-foo"] = "bar",
+                    ["asp-action"] = "index",
+                    ["asp-controller"] = "home",
+                    ["asp-fragment"] = "hello=world",
+                    ["asp-host"] = "contoso.com",
+                    ["asp-protocol"] = "http"
                 },
                 items: new Dictionary<object, object>(),
                 uniqueId: "test",
@@ -43,10 +44,10 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
                 });
             var output = new TagHelperOutput(
                 expectedTagName,
-                attributes: new Dictionary<string, object>
+                attributes: new TagHelperAttributes
                 {
-                    { "id", "myanchor" },
-                    { "asp-route-foo", "bar" },
+                    ["id"] = "myanchor",
+                    ["asp-route-foo"] = "bar",
                 });
             output.Content.SetContent("Something");
 
@@ -73,9 +74,9 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
 
             // Assert
             Assert.Equal(2, output.Attributes.Count);
-            var attribute = Assert.Single(output.Attributes, kvp => kvp.Key.Equals("id"));
+            var attribute = Assert.Single(output.Attributes, kvp => kvp.Name.Equals("id"));
             Assert.Equal("myanchor", attribute.Value);
-            attribute = Assert.Single(output.Attributes, kvp => kvp.Key.Equals("href"));
+            attribute = Assert.Single(output.Attributes, kvp => kvp.Name.Equals("href"));
             Assert.Equal("home/index", attribute.Value);
             Assert.Equal("Something", output.Content.GetContent());
             Assert.Equal(expectedTagName, output.TagName);
@@ -86,7 +87,8 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
         {
             // Arrange
             var context = new TagHelperContext(
-                allAttributes: new Dictionary<string, object>(),
+                allAttributes: new ReadOnlyTagHelperAttributes<IReadOnlyTagHelperAttribute>(
+                    Enumerable.Empty<IReadOnlyTagHelperAttribute>()),
                 items: new Dictionary<object, object>(),
                 uniqueId: "test",
                 getChildContentAsync: () =>
@@ -97,7 +99,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
                 });
             var output = new TagHelperOutput(
                 "a",
-                attributes: new Dictionary<string, object>());
+                attributes: new TagHelperAttributes());
             output.Content.SetContent(string.Empty);
 
             var generator = new Mock<IHtmlGenerator>(MockBehavior.Strict);
@@ -128,7 +130,8 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
         {
             // Arrange
             var context = new TagHelperContext(
-                allAttributes: new Dictionary<string, object>(),
+                allAttributes: new ReadOnlyTagHelperAttributes<IReadOnlyTagHelperAttribute>(
+                    Enumerable.Empty<IReadOnlyTagHelperAttribute>()),
                 items: new Dictionary<object, object>(),
                 uniqueId: "test",
                 getChildContentAsync: () =>
@@ -139,7 +142,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
                 });
             var output = new TagHelperOutput(
                 "a",
-                attributes: new Dictionary<string, object>());
+                attributes: new TagHelperAttributes());
             output.Content.SetContent(string.Empty);
 
             var generator = new Mock<IHtmlGenerator>();
@@ -180,13 +183,13 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             var anchorTagHelper = new AnchorTagHelper();
             var output = new TagHelperOutput(
                 "a",
-                attributes: new Dictionary<string, object>()
+                attributes: new TagHelperAttributes
                 {
-                    { "href", "http://www.contoso.com" }
+                    ["href"] = "http://www.contoso.com"
                 });
             if (propertyName == "asp-route-")
             {
-                output.Attributes.Add("asp-route-foo", "bar");
+                output.Attributes.Add(new TagHelperAttribute("asp-route-foo", "bar"));
             }
             else
             {
@@ -218,7 +221,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             typeof(AnchorTagHelper).GetProperty(propertyName).SetValue(anchorTagHelper, "Home");
             var output = new TagHelperOutput(
                 "a",
-                attributes: new Dictionary<string, object>());
+                attributes: new TagHelperAttributes());
             var expectedErrorMessage = "Cannot determine an 'href' attribute for <a>. An <a> with a specified " +
                 "'asp-route' must not have an 'asp-action' or 'asp-controller' attribute.";
 
